@@ -3,16 +3,11 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, CheckCircle2, BarChart3, User, Settings, Plus,
+  CheckCircle2, BarChart3, Calendar, User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ViewKey =
-  | "dashboard"
-  | "habits"
-  | "insights"
-  | "profile"
-  | "settings";
+export type ViewKey = "today" | "progress" | "history" | "profile";
 
 interface NavItem {
   key: ViewKey;
@@ -21,30 +16,24 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { key: "habits", label: "Habits", icon: CheckCircle2 },
-  { key: "insights", label: "Insights", icon: BarChart3 },
+  { key: "today", label: "Today", icon: CheckCircle2 },
+  { key: "progress", label: "Progress", icon: BarChart3 },
+  { key: "history", label: "History", icon: Calendar },
   { key: "profile", label: "Profile", icon: User },
-  { key: "settings", label: "Settings", icon: Settings },
 ];
 
 interface FloatingNavProps {
   active: ViewKey;
   onChange: (v: ViewKey) => void;
-  onAddHabit?: () => void;
 }
 
-/** Desktop floating sidebar (lg+). Vertical pill of icon buttons with labels. */
-export function DesktopNav({
-  active,
-  onChange,
-  onAddHabit,
-}: FloatingNavProps) {
+/** Desktop floating sidebar (lg+). */
+export function DesktopNav({ active, onChange }: FloatingNavProps) {
   return (
     <aside className="pointer-events-none fixed left-0 top-0 z-30 hidden h-full w-[88px] items-center justify-center px-3 lg:flex">
       <nav className="glass-strong glass-highlight pointer-events-auto flex w-full flex-col items-center gap-1 rounded-[28px] py-5">
         <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white shadow-inner">
-          <span className="text-sm font-semibold tracking-tight">L</span>
+          <span className="text-sm font-semibold tracking-tight">S</span>
         </div>
         {NAV_ITEMS.map((item) => {
           const isActive = active === item.key;
@@ -58,9 +47,7 @@ export function DesktopNav({
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "group relative flex h-12 w-12 items-center justify-center rounded-2xl transition-colors",
-                isActive
-                  ? "text-[#0d1c1c]"
-                  : "text-white/70 hover:text-white",
+                isActive ? "text-[#0d1c1c]" : "text-white/70 hover:text-white",
               )}
             >
               {isActive && (
@@ -71,39 +58,23 @@ export function DesktopNav({
                 />
               )}
               <Icon size={20} strokeWidth={1.75} className="relative z-10" />
-              <span
-                className="pointer-events-none absolute left-[calc(100%+10px)] z-50 whitespace-nowrap rounded-full glass-pill px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-              >
+              <span className="pointer-events-none absolute left-[calc(100%+10px)] z-50 whitespace-nowrap rounded-full glass-pill px-3 py-1.5 text-xs font-medium text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                 {item.label}
               </span>
             </button>
           );
         })}
-        {onAddHabit && (
-          <button
-            type="button"
-            onClick={onAddHabit}
-            aria-label="Add habit"
-            className="mt-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white transition-colors hover:bg-white/20"
-          >
-            <Plus size={20} strokeWidth={2} />
-          </button>
-        )}
       </nav>
     </aside>
   );
 }
 
 /** Mobile / tablet floating bottom navigation. */
-export function MobileNav({
-  active,
-  onChange,
-  onAddHabit,
-}: FloatingNavProps) {
+export function MobileNav({ active, onChange }: FloatingNavProps) {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
       <nav className="glass-strong glass-highlight pointer-events-auto flex items-center gap-1 rounded-full px-2 py-2">
-        {NAV_ITEMS.slice(0, 4).map((item) => {
+        {NAV_ITEMS.map((item) => {
           const isActive = active === item.key;
           const Icon = item.icon;
           return (
@@ -129,16 +100,6 @@ export function MobileNav({
             </button>
           );
         })}
-        {onAddHabit && (
-          <button
-            type="button"
-            onClick={onAddHabit}
-            aria-label="Add habit"
-            className="ml-1 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#B7D6D2] to-[#8BB0AE] text-[#0d1c1c] shadow-[0_8px_24px_-6px_rgba(183,214,210,0.6)]"
-          >
-            <Plus size={22} strokeWidth={2.2} />
-          </button>
-        )}
       </nav>
     </div>
   );

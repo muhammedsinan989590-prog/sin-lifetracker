@@ -1,36 +1,78 @@
 /**
- * Life OS — types, defaults, and calculation utilities.
- * Pure logic only — no React, no IO. Safe to use from server + client.
+ * Life OS Daily — fixed-habit checklist logic.
+ *
+ * The app has exactly 14 fixed habits across 5 categories. There is no
+ * add / edit / delete flow. Each habit is a simple boolean checkbox per day.
  */
 
-export type HabitFrequency = "daily" | "weekdays" | "weekends";
+export type HabitCategory =
+  | "discipline"
+  | "study"
+  | "fitness"
+  | "creative"
+  | "personal";
 
 export interface Habit {
   id: string;
   name: string;
-  description?: string;
+  category: HabitCategory;
   icon: string; // lucide icon name
-  accent: string; // hex color used for icon tint / progress
-  frequency: HabitFrequency;
-  targetPerDay?: number; // for quantity-based habits (e.g. drink 8 glasses)
-  unit?: string;
-  createdAt: string; // ISO date
-  archived?: boolean;
 }
 
-/** Map of `YYYY-MM-DD` -> { [habitId]: number } where the number is the count completed (1 = done). */
-export type CompletionMap = Record<string, Record<string, number>>;
+export interface CategoryMeta {
+  id: HabitCategory;
+  name: string;
+  emoji: string;
+  accent: string; // hex
+}
 
-export interface LifeOSState {
-  habits: Habit[];
-  completions: CompletionMap;
-  userName: string;
-  focusMinutesToday: number;
-  lastResetDate: string; // YYYY-MM-DD, used to auto-reset daily focus counter
+export const CATEGORIES: CategoryMeta[] = [
+  { id: "discipline", name: "Discipline", emoji: "🧠", accent: "#B7D6D2" },
+  { id: "study", name: "Study", emoji: "📚", accent: "#8BB0AE" },
+  { id: "fitness", name: "Fitness", emoji: "💪", accent: "#E8B894" },
+  { id: "creative", name: "Creative", emoji: "🎨", accent: "#C7A8E8" },
+  { id: "personal", name: "Personal", emoji: "🌱", accent: "#9DD9A8" },
+];
+
+/**
+ * The 14 fixed daily habits. Order within a category is preserved in the UI.
+ * "Creative work & Personal project" is split into two habits to reach 14
+ * total — this matches the user's stated total of 14 daily habits.
+ */
+export const FIXED_HABITS: Habit[] = [
+  // 🧠 Discipline (5)
+  { id: "wake-up", name: "Wake up on time", category: "discipline", icon: "Sunrise" },
+  { id: "movers", name: "Follow MOVERS", category: "discipline", icon: "Compass" },
+  { id: "no-scroll", name: "Avoid unnecessary scrolling", category: "discipline", icon: "Shield" },
+  { id: "read", name: "Read / learn", category: "discipline", icon: "BookOpen" },
+  { id: "journal", name: "Journal / self-reflection", category: "discipline", icon: "NotebookPen" },
+  // 📚 Study (2)
+  { id: "study-session", name: "Daily study session", category: "study", icon: "GraduationCap" },
+  { id: "planned-tasks", name: "Complete planned tasks", category: "study", icon: "CheckSquare" },
+  // 💪 Fitness (1)
+  { id: "exercise", name: "Exercise / workout", category: "fitness", icon: "Dumbbell" },
+  // 🎨 Creative (2)
+  { id: "creative-work", name: "Creative work", category: "creative", icon: "Palette" },
+  { id: "personal-project", name: "Personal project", category: "creative", icon: "Sparkles" },
+  // 🌱 Personal (4)
+  { id: "water", name: "Drink enough water", category: "personal", icon: "Droplets" },
+  { id: "eat", name: "Eat properly", category: "personal", icon: "Apple" },
+  { id: "hygiene", name: "Personal hygiene", category: "personal", icon: "Sparkles" },
+  { id: "sleep", name: "Sleep on time", category: "personal", icon: "Moon" },
+];
+
+export const TOTAL_HABITS = FIXED_HABITS.length; // 14
+
+export function habitsByCategory(cat: HabitCategory): Habit[] {
+  return FIXED_HABITS.filter((h) => h.category === cat);
+}
+
+export function habitById(id: string): Habit | undefined {
+  return FIXED_HABITS.find((h) => h.id === id);
 }
 
 /* ------------------------------------------------------------------ */
-/* Date helpers (local-time based to avoid TZ drift)                   */
+/* Date helpers                                                         */
 /* ------------------------------------------------------------------ */
 export const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -52,9 +94,24 @@ export function addDays(d: Date, n: number): Date {
   return r;
 }
 
-export function isWeekend(d: Date): boolean {
-  const day = d.getDay();
-  return day === 0 || day === 6;
+export function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+export function isFuture(d: Date): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(d);
+  target.setHours(0, 0, 0, 0);
+  return target.getTime() > today.getTime();
+}
+
+export function isToday(d: Date): boolean {
+  return isSameDay(d, new Date());
 }
 
 /** Last `n` days as YYYY-MM-DD keys, oldest first. */
@@ -68,6 +125,10 @@ export function weekdayShort(d: Date): string {
   return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()];
 }
 
+export function weekdayVeryShort(d: Date): string {
+  return ["S", "M", "T", "W", "T", "F", "S"][d.getDay()];
+}
+
 export function monthShort(d: Date): string {
   return [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -79,9 +140,13 @@ export function prettyDate(d: Date = new Date()): string {
   return `${weekdayShort(d)}, ${monthShort(d)} ${d.getDate()}`;
 }
 
+export function longDate(d: Date): string {
+  return `${weekdayShort(d)}, ${monthShort(d)} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
 export function greeting(d: Date = new Date()): string {
   const h = d.getHours();
-  if (h < 5) return "Burning the midnight oil";
+  if (h < 5) return "Still up";
   if (h < 12) return "Good morning";
   if (h < 17) return "Good afternoon";
   if (h < 21) return "Good evening";
@@ -89,203 +154,129 @@ export function greeting(d: Date = new Date()): string {
 }
 
 /* ------------------------------------------------------------------ */
-/* Habit filtering & completion logic                                  */
+/* Completion map & calculations                                        */
 /* ------------------------------------------------------------------ */
-export function isHabitScheduled(habit: Habit, d: Date): boolean {
-  if (habit.frequency === "daily") return true;
-  if (habit.frequency === "weekdays") return !isWeekend(d);
-  return isWeekend(d);
+
+/** Map of `YYYY-MM-DD` -> { [habitId]: 1 } where 1 means completed. */
+export type CompletionMap = Record<string, Record<string, number>>;
+
+export interface CompletionSnapshot {
+  dateKey: string;
+  completed: number; // count
+  total: number; // always 14
+  percent: number; // 0..100
+  habitIds: string[]; // ids completed on this date
 }
 
 export function getCompletion(
-  state: Pick<LifeOSState, "completions">,
+  completions: CompletionMap,
   dateKey: string,
   habitId: string,
-): number {
-  return state.completions[dateKey]?.[habitId] ?? 0;
-}
-
-export function isHabitDone(
-  state: Pick<LifeOSState, "completions">,
-  dateKey: string,
-  habit: Habit,
 ): boolean {
-  const count = getCompletion(state, dateKey, habit.id);
-  return count >= (habit.targetPerDay ?? 1);
+  return (completions[dateKey]?.[habitId] ?? 0) >= 1;
 }
 
-export function completionRate(
-  state: Pick<LifeOSState, "completions" | "habits">,
+export function snapshotForDate(
+  completions: CompletionMap,
+  dateKey: string,
+): CompletionSnapshot {
+  const day = completions[dateKey] ?? {};
+  const habitIds = FIXED_HABITS.filter((h) => (day[h.id] ?? 0) >= 1).map(
+    (h) => h.id,
+  );
+  const completed = habitIds.length;
+  return {
+    dateKey,
+    completed,
+    total: TOTAL_HABITS,
+    percent: Math.round((completed / TOTAL_HABITS) * 100),
+    habitIds,
+  };
+}
+
+export function dailyPercent(
+  completions: CompletionMap,
   dateKey: string,
 ): number {
-  const day = dateFromKey(dateKey);
-  const scheduled = state.habits.filter(
-    (h) => !h.archived && isHabitScheduled(h, day),
-  );
-  if (scheduled.length === 0) return 0;
-  const done = scheduled.filter((h) =>
-    isHabitDone(state, dateKey, h),
-  ).length;
-  return Math.round((done / scheduled.length) * 100);
+  return snapshotForDate(completions, dateKey).percent;
 }
 
-/** Current streak (consecutive days up to today with >=1 habit completed). */
-export function currentStreak(state: LifeOSState): number {
+/**
+ * Current streak — consecutive days (ending today or yesterday) where at
+ * least one habit was completed. A "streak day" is any day with >= 1
+ * completed habit. Today counts only if at least one habit is checked.
+ */
+export function currentStreak(completions: CompletionMap): number {
   let streak = 0;
   let cursor = new Date();
-  // Allow today to be incomplete without breaking the streak
-  if (completionRate(state, todayKey(cursor)) === 0) {
+  // Allow today to be empty without breaking the streak (count from yesterday)
+  if (dailyPercent(completions, todayKey(cursor)) === 0) {
     cursor = addDays(cursor, -1);
   }
-  while (completionRate(state, todayKey(cursor)) > 0) {
+  while (dailyPercent(completions, todayKey(cursor)) > 0) {
     streak += 1;
     cursor = addDays(cursor, -1);
-    if (streak > 365) break;
+    if (streak > 365 * 3) break;
   }
   return streak;
 }
 
-export function longestStreak(state: LifeOSState): number {
-  let best = 0;
-  let cursor = new Date();
-  // look back up to 365 days
-  for (let i = 0; i < 365; i++) {
-    if (completionRate(state, todayKey(cursor)) > 0) {
-      // count consecutive
-      let run = 0;
-      let c = cursor;
-      while (completionRate(state, todayKey(c)) > 0) {
-        run += 1;
-        c = addDays(c, -1);
-        if (run > 365) break;
-      }
+/** Longest streak in recorded history. */
+export function longestStreak(completions: CompletionMap): number {
+  // Collect all date keys with >= 1 completion, sort ascending.
+  const days = Object.keys(completions)
+    .filter((k) => dailyPercent(completions, k) > 0)
+    .sort();
+  if (days.length === 0) return 0;
+  let best = 1;
+  let run = 1;
+  for (let i = 1; i < days.length; i++) {
+    const prev = dateFromKey(days[i - 1]);
+    const curr = dateFromKey(days[i]);
+    const diff = Math.round(
+      (curr.getTime() - prev.getTime()) / MS_PER_DAY,
+    );
+    if (diff === 1) {
+      run += 1;
       best = Math.max(best, run);
-      cursor = addDays(cursor, -(run + 1));
     } else {
-      cursor = addDays(cursor, -1);
+      run = 1;
     }
   }
   return best;
 }
 
-/** Average completion across the last `n` days. */
+/** Average completion percentage across the last `n` days (0 if no data). */
 export function averageCompletion(
-  state: LifeOSState,
+  completions: CompletionMap,
   n: number,
   end: Date = new Date(),
 ): number {
   const days = lastNDays(n, end);
-  if (days.length === 0) return 0;
   const total = days.reduce(
-    (sum, k) => sum + completionRate(state, k),
+    (sum, k) => sum + dailyPercent(completions, k),
     0,
   );
   return Math.round(total / days.length);
 }
 
-/** Per-habit streak (consecutive scheduled days completed up to today). */
-export function habitStreak(state: LifeOSState, habitId: string): number {
-  const habit = state.habits.find((h) => h.id === habitId);
-  if (!habit) return 0;
-  let streak = 0;
-  let cursor = new Date();
-  // if today not done yet but still scheduled, allow yesterday
-  if (
-    isHabitScheduled(habit, cursor) &&
-    !isHabitDone(state, todayKey(cursor), habit)
-  ) {
-    cursor = addDays(cursor, -1);
-  }
-  // walk back through scheduled days
-  while (true) {
-    if (!isHabitScheduled(habit, cursor)) {
-      cursor = addDays(cursor, -1);
-      if (streak > 0 && !isHabitScheduled(habit, cursor)) break;
-      continue;
-    }
-    if (isHabitDone(state, todayKey(cursor), habit)) {
-      streak += 1;
-      cursor = addDays(cursor, -1);
-    } else {
-      break;
-    }
-    if (streak > 365) break;
-  }
-  return streak;
+/** Total completed habit-checkmarks across the last `n` days. */
+export function totalCompleted(
+  completions: CompletionMap,
+  n: number,
+  end: Date = new Date(),
+): number {
+  const days = lastNDays(n, end);
+  return days.reduce(
+    (sum, k) => sum + snapshotForDate(completions, k).completed,
+    0,
+  );
 }
 
 /* ------------------------------------------------------------------ */
-/* Default seed data — gives the dashboard a rich first-run experience */
+/* Seed data — realistic history so charts/insights look alive         */
 /* ------------------------------------------------------------------ */
-export const DEFAULT_HABITS: Habit[] = [
-  {
-    id: "morning-meditation",
-    name: "Morning Meditation",
-    description: "10 minutes of mindful breathing",
-    icon: "Sunrise",
-    accent: "#B7D6D2",
-    frequency: "daily",
-    createdAt: todayKey(addDays(new Date(), -90)),
-  },
-  {
-    id: "drink-water",
-    name: "Drink Water",
-    description: "Stay hydrated through the day",
-    icon: "Droplets",
-    accent: "#8BB0AE",
-    frequency: "daily",
-    targetPerDay: 8,
-    unit: "glasses",
-    createdAt: todayKey(addDays(new Date(), -90)),
-  },
-  {
-    id: "read",
-    name: "Read 30 Minutes",
-    description: "Books, articles, anything thoughtful",
-    icon: "BookOpen",
-    accent: "#D5E0DF",
-    frequency: "daily",
-    createdAt: todayKey(addDays(new Date(), -90)),
-  },
-  {
-    id: "workout",
-    name: "Workout",
-    description: "Move your body for 30+ minutes",
-    icon: "Dumbbell",
-    accent: "#E8B894",
-    frequency: "weekdays",
-    createdAt: todayKey(addDays(new Date(), -90)),
-  },
-  {
-    id: "journal",
-    name: "Journal",
-    description: "Three lines about your day",
-    icon: "NotebookPen",
-    accent: "#B7D6D2",
-    frequency: "daily",
-    createdAt: todayKey(addDays(new Date(), -90)),
-  },
-  {
-    id: "no-sugar",
-    name: "No Refined Sugar",
-    description: "Skip the sweets for today",
-    icon: "Candy",
-    accent: "#E08585",
-    frequency: "daily",
-    createdAt: todayKey(addDays(new Date(), -90)),
-  },
-  {
-    id: "sleep-early",
-    name: "Sleep Before 11pm",
-    description: "Protect your tomorrow with rest tonight",
-    icon: "Moon",
-    accent: "#8BB0AE",
-    frequency: "daily",
-    createdAt: todayKey(addDays(new Date(), -90)),
-  },
-];
 
-/** Deterministic pseudo-random so the seed history looks realistic and is stable across reloads. */
 function seededRandom(seed: number): () => number {
   let s = seed;
   return () => {
@@ -294,53 +285,30 @@ function seededRandom(seed: number): () => number {
   };
 }
 
-function generateSeedCompletions(habits: Habit[]): CompletionMap {
+function generateSeedCompletions(): CompletionMap {
   const completions: CompletionMap = {};
-  const rng = seededRandom(42);
-  const days = lastNDays(60);
+  const rng = seededRandom(7);
+  const days = lastNDays(45);
   days.forEach((dateKey) => {
     const d = dateFromKey(dateKey);
-    completions[dateKey] = {};
-    habits.forEach((h) => {
-      if (!isHabitScheduled(h, d)) return;
-      // recent days are more likely complete, weekends slightly lower for workout
-      const daysAgo = Math.floor(
-        (Date.now() - d.getTime()) / MS_PER_DAY,
-      );
-      const recencyBoost = Math.max(0, 1 - daysAgo / 45);
-      const baseRate = 0.55 + 0.25 * recencyBoost;
-      const adj = h.id === "workout" && isWeekend(d) ? -0.15 : 0;
-      const prob = Math.min(0.92, Math.max(0.25, baseRate + adj));
-      if (h.targetPerDay && h.targetPerDay > 1) {
-        const count = Math.floor(rng() * (h.targetPerDay + 1));
-        completions[dateKey][h.id] =
-          rng() < prob ? Math.max(count, h.targetPerDay) : count;
-      } else {
-        if (rng() < prob) completions[dateKey][h.id] = 1;
-      }
+    const daysAgo = Math.floor(
+      (Date.now() - d.getTime()) / MS_PER_DAY,
+    );
+    const recencyBoost = Math.max(0, 1 - daysAgo / 35);
+    const baseRate = 0.5 + 0.3 * recencyBoost;
+    const weekendDip = d.getDay() === 0 || d.getDay() === 6 ? -0.1 : 0;
+    const prob = Math.min(0.9, Math.max(0.3, baseRate + weekendDip));
+    const dayMap: Record<string, number> = {};
+    FIXED_HABITS.forEach((h) => {
+      if (rng() < prob) dayMap[h.id] = 1;
     });
+    if (Object.keys(dayMap).length > 0) completions[dateKey] = dayMap;
   });
+  // Make sure today starts empty so the user can check things live
+  delete completions[todayKey()];
   return completions;
 }
 
-export function defaultState(): LifeOSState {
-  const habits = DEFAULT_HABITS;
-  const completions = generateSeedCompletions(habits);
-  return {
-    habits,
-    completions,
-    userName: "Alex",
-    focusMinutesToday: 145,
-    lastResetDate: todayKey(),
-  };
+export function defaultCompletions(): CompletionMap {
+  return generateSeedCompletions();
 }
-
-/* ------------------------------------------------------------------ */
-/* Icon registry — maps string names to lucide components              */
-/* ------------------------------------------------------------------ */
-export const HABIT_ICON_NAMES = [
-  "Sunrise", "Droplets", "BookOpen", "Dumbbell", "NotebookPen",
-  "Candy", "Moon", "Activity", "Footprints", "Apple",
-  "Brain", "Coffee", "Heart", "Leaf", "Music", "PencilLine",
-  "Bike", "Flower2", "Sparkles", "Star",
-] as const;

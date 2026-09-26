@@ -2,18 +2,20 @@
 
 import * as React from "react";
 import {
-  Sunrise, Droplets, BookOpen, Dumbbell, NotebookPen, Candy, Moon,
-  Activity, Footprints, Apple, Brain, Coffee, Heart, Leaf, Music,
-  PencilLine, Bike, Flower2, Sparkles, Star, type LucideIcon,
+  Sunrise, Compass, Shield, BookOpen, NotebookPen,
+  GraduationCap, CheckSquare, Dumbbell, Palette, Sparkles,
+  Droplets, Apple, Moon,
+  type LucideIcon,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, LucideIcon> = {
-  Sunrise, Droplets, BookOpen, Dumbbell, NotebookPen, Candy, Moon,
-  Activity, Footprints, Apple, Brain, Coffee, Heart, Leaf, Music,
-  PencilLine, Bike, Flower2, Sparkles, Star,
+  Sunrise, Compass, Shield, BookOpen, NotebookPen,
+  GraduationCap, CheckSquare, Dumbbell, Palette, Sparkles,
+  Droplets, Apple, Moon,
 };
 
-export interface HabitIconProps extends React.SVGAttributes<SVGSVGElement> {
+export interface HabitIconProps
+  extends React.SVGAttributes<SVGSVGElement> {
   name: string;
   size?: number;
   strokeWidth?: number;
@@ -28,5 +30,3 @@ export function HabitIcon({
   const Comp = ICON_MAP[name] ?? Sparkles;
   return <Comp size={size} strokeWidth={strokeWidth} {...props} />;
 }
-
-export const ICON_NAMES = Object.keys(ICON_MAP);
