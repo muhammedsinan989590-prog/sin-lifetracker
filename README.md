@@ -127,8 +127,8 @@ All habit completions + user name are stored in browser **localStorage** under t
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/YOUR_USERNAME/life-os-daily.git
-cd life-os-daily
+git clone https://github.com/muhammedsinan989590-prog/sin-lifetracker.git
+cd sin-lifetracker
 
 # 2. Install dependencies
 bun install

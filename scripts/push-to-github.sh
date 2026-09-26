@@ -4,13 +4,13 @@
 #
 # Usage:
 #   1. Create an empty repo on GitHub (no README, no LICENSE — leave it empty)
-#      e.g. https://github.com/new  →  name: life-os-daily
+#      e.g. https://github.com/new  →  name: sin-lifetracker
 #
 #   2. Make this script executable:
 #      chmod +x scripts/push-to-github.sh
 #
 #   3. Run it with your repo URL:
-#      ./scripts/push-to-github.sh https://github.com/YOUR_USERNAME/life-os-daily.git
+#      ./scripts/push-to-github.sh https://github.com/muhammedsinan989590-prog/sin-lifetracker.git
 #
 #   4. (First time only) GitHub will prompt for your username + personal access token.
 #      Create a token at: https://github.com/settings/tokens (scopes: repo, workflow)
