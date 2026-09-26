@@ -23,6 +23,7 @@ node_modules
 # misc
 .DS_Store
 *.pem
+Thumbs.db
 
 # debug
 npm-debug.log*
@@ -30,25 +31,41 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — NEVER commit secrets
 .env*
+!.env.example
 
 # vercel
 .vercel
 
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local dev artifacts
 local-*
 .claude
 .z-ai-config
 *.log
 dev.log
 dev.out.log
+server.log
 test
 prompt
 
-server.log
-# Skills directory
+# skills / scaffolding internals
 /skills/
+/.zscripts/dev.pid
+
+# Database files (SQLite, regenerated locally)
+/db/*.db
+/db/*.db-journal
+
+# Downloaded screenshots / runtime artifacts (kept locally only)
+/download/
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp
+*.swo
