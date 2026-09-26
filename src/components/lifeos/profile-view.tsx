@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Flame, Target, Award, TrendingUp, Sparkles, Trash2, Pencil, Check } from "lucide-react";
 import { GlassCard } from "./glass-card";
 import { ProgressRing } from "./progress-ring";
+import { ResetButton } from "./reset-button";
 import { Input } from "@/components/ui/input";
 import { useLifeOSStore } from "@/lib/store";
 import {
@@ -21,7 +22,6 @@ export function ProfileView() {
   const userName = useLifeOSStore((s) => s.userName);
   const completions = useLifeOSStore((s) => s.completions);
   const setUserName = useLifeOSStore((s) => s.setUserName);
-  const clearDate = useLifeOSStore((s) => s.clearDate);
 
   const [editingName, setEditingName] = React.useState(false);
   const [nameDraft, setNameDraft] = React.useState(userName);
@@ -42,20 +42,6 @@ export function ProfileView() {
     setEditingName(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
-  };
-
-  const handleReset = () => {
-    if (
-      window.confirm(
-        "This will permanently delete ALL your habit history. This cannot be undone. Continue?",
-      )
-    ) {
-      // Clear today + all history kept in localStorage
-      try {
-        window.localStorage.removeItem("life-os-daily-v1");
-      } catch {}
-      window.location.reload();
-    }
   };
 
   return (
@@ -196,16 +182,11 @@ export function ProfileView() {
           <div>
             <h3 className="text-sm font-semibold text-white">Reset all data</h3>
             <p className="text-xs text-white/55">
-              Clears your name and every habit completion. Cannot be undone.
+              Wipes every habit completion and snaps back to today. Your name is kept. Cannot be undone.
             </p>
           </div>
         </div>
-        <button
-          onClick={handleReset}
-          className="rounded-full border border-[#E08585]/30 bg-[#E08585]/10 px-4 py-2 text-xs font-medium text-[#E08585] transition-colors hover:bg-[#E08585]/20"
-        >
-          Reset everything
-        </button>
+        <ResetButton variant="danger" label="Reset everything" />
       </GlassCard>
     </div>
   );

@@ -6,6 +6,7 @@ import { Flame } from "lucide-react";
 import { DateNavigator, useSelectedDateLabel } from "./date-navigator";
 import { TodayProgressCard } from "./today-progress-card";
 import { CategorySection } from "./habit-row";
+import { ResetButton } from "./reset-button";
 import { GlassCard } from "./glass-card";
 import { CATEGORIES, currentStreak, greeting, prettyDate, todayKey } from "@/lib/lifeos";
 import { useLifeOSStore } from "@/lib/store";
@@ -21,6 +22,8 @@ export function TodayView({ onNavigate }: TodayViewProps) {
 
   const streak = currentStreak(completions);
   const hello = greeting(new Date());
+  // Show "Reset" button whenever there is any recorded history.
+  const hasHistory = Object.keys(completions).length > 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -43,13 +46,16 @@ export function TodayView({ onNavigate }: TodayViewProps) {
           </h1>
           <p className="mt-1.5 text-sm text-white/65">Today&apos;s habits</p>
         </div>
-        {streak > 0 && (
-          <div className="flex items-center gap-2 self-start rounded-full glass-pill px-3.5 py-2 text-sm md:self-end">
-            <Flame size={14} className="text-[#E8B894]" />
-            <span className="font-semibold text-white">{streak}</span>
-            <span className="text-white/60">day streak</span>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2 self-start md:self-end">
+          {streak > 0 && (
+            <div className="flex items-center gap-2 rounded-full glass-pill px-3.5 py-2 text-sm">
+              <Flame size={14} className="text-[#E8B894]" />
+              <span className="font-semibold text-white">{streak}</span>
+              <span className="text-white/60">day streak</span>
+            </div>
+          )}
+          {hasHistory && <ResetButton label="Reset" />}
+        </div>
       </motion.header>
 
       {/* Date navigation */}

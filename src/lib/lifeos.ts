@@ -274,41 +274,14 @@ export function totalCompleted(
 }
 
 /* ------------------------------------------------------------------ */
-/* Seed data — realistic history so charts/insights look alive         */
+/* Default state — empty. The tracker starts fresh from today.        */
 /* ------------------------------------------------------------------ */
 
-function seededRandom(seed: number): () => number {
-  let s = seed;
-  return () => {
-    s = (s * 9301 + 49297) % 233280;
-    return s / 233280;
-  };
-}
-
-function generateSeedCompletions(): CompletionMap {
-  const completions: CompletionMap = {};
-  const rng = seededRandom(7);
-  const days = lastNDays(45);
-  days.forEach((dateKey) => {
-    const d = dateFromKey(dateKey);
-    const daysAgo = Math.floor(
-      (Date.now() - d.getTime()) / MS_PER_DAY,
-    );
-    const recencyBoost = Math.max(0, 1 - daysAgo / 35);
-    const baseRate = 0.5 + 0.3 * recencyBoost;
-    const weekendDip = d.getDay() === 0 || d.getDay() === 6 ? -0.1 : 0;
-    const prob = Math.min(0.9, Math.max(0.3, baseRate + weekendDip));
-    const dayMap: Record<string, number> = {};
-    FIXED_HABITS.forEach((h) => {
-      if (rng() < prob) dayMap[h.id] = 1;
-    });
-    if (Object.keys(dayMap).length > 0) completions[dateKey] = dayMap;
-  });
-  // Make sure today starts empty so the user can check things live
-  delete completions[todayKey()];
-  return completions;
-}
-
+/**
+ * Returns an empty completion map. The tracker starts with no history
+ * so the user builds their own progress from day one. Use the Reset
+ * button in the app to wipe localStorage and return to this state.
+ */
 export function defaultCompletions(): CompletionMap {
-  return generateSeedCompletions();
+  return {};
 }

@@ -24,6 +24,7 @@ interface LifeOSStore {
   toggleHabit: (habitId: string, dateKey?: string) => void;
   isCompleted: (dateKey: string, habitId: string) => boolean;
   clearDate: (dateKey: string) => void;
+  resetAll: () => void;
 
   /* date navigation */
   selectedDateKey: string; // YYYY-MM-DD, defaults to today
@@ -72,6 +73,17 @@ export const useLifeOSStore = create<LifeOSStore>()(
           const next = { ...s.completions };
           delete next[dateKey];
           return { completions: next };
+        }),
+
+      /**
+       * Wipe ALL completion history and snap back to today.
+       * The user name is preserved. This is the "start over" action
+       * triggered by the Reset button.
+       */
+      resetAll: () =>
+        set({
+          completions: {},
+          selectedDateKey: todayKey(),
         }),
 
       selectedDateKey: todayKey(),
